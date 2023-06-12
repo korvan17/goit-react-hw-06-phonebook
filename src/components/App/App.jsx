@@ -1,24 +1,19 @@
 import { nanoid } from 'nanoid';
+import { useSelector, useDispatch } from 'react-redux'; // Импортируйте useSelector и useDispatch
 import ContactForm from '../ContactForm/ContactForm';
 import ContactList from '../ContactList/ContactList';
 import Filter from '../Filter/Filter';
 
-import { useState, useEffect } from 'react';
 import { MainConteiner } from './App.styled';
+import { addContact, setFilter, deleteContact } from '../../store/contactsSlice'; // Импортируйте действия из contactsSlice
 
 export function App() {
-
-  const [contacts, setContacts ] = useState(JSON.parse(localStorage.getItem('contacts')) ?? [])
-  const [filter, setFilter ] = useState('')
-
-  useEffect(() => {
-    console.log('contacts - ', contacts)
-    localStorage.setItem('contacts', JSON.stringify(contacts));
-  }, [contacts])
+  const contacts = useSelector((state) => state.contacts);
+  const dispatch = useDispatch();
 
   function onFormSubmit(name, number) {
-    const existingContact = contacts.find(
-      contact => contact.name === name
+    const existingContact = contacts.list.find(
+      (contact) => contact.name === name
     );
     if (existingContact) {
       alert(`${name} is already in contacts`);
@@ -26,33 +21,29 @@ export function App() {
     }
 
     const newContact = { id: nanoid(3), name, number };
-    
-    setContacts(state => [...state, newContact])
-  };
+    dispatch(addContact(newContact));
+  }
 
   function onChange({ target: { value } }) {
-      setFilter(value);
+    dispatch(setFilter(value));
   }
 
-  const filteredContacts = contacts?.filter(contact => contact.name.toLowerCase().includes(filter.toLowerCase()))
+  const filteredContacts = contacts.list.filter((contact) =>
+    contact.name.toLowerCase().includes(contacts.filter.toLowerCase())
+  );
 
   function onDelete(id) {
-    setContacts(state => state.filter(contact => contact.id !== id));
-    setFilter(state => state.filter(contact => contact.id !== id));
+    dispatch(deleteContact(id));
   }
 
-    return (
-      <MainConteiner>
-        <h1>Phonebook</h1>
-        <ContactForm onSabmit={onFormSubmit} />
+  return (
+    <MainConteiner>
+      <h1>Phonebook</h1>
+      <ContactForm onSabmit={onFormSubmit} />
 
-        <h2>Contacts</h2>
-        <Filter onChange={onChange} />
-        <ContactList
-          onDelete={onDelete}
-          contacts={filteredContacts}
-          filter={filter}
-        />
-      </MainConteiner>
-    );
+      <h2>Contacts</h2>
+      <Filter onChange={onChange} />
+      <ContactList onDelete={onDelete} contacts={filteredContacts} />
+    </MainConteiner>
+  );
 }
